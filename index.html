@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>PedroBox</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--surf:#111827;--surf2:#1a2236;
+  --acc:#00e5a0;--acc2:#00c9ff;--acc3:#a78bfa;
+  --txt:#f0f4ff;--dim:#7a85a0;--red:#ff5757;
+  --wa:#25d366;--wa-hdr:#0f5e4e;
+  --bub-in:#1e293b;--bub-out:#1b3a2a;--chat-bg:#1a2b24;
+  --font:'Outfit',sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:#060810}
+body{font-family:var(--font);color:var(--txt);display:flex;align-items:center;justify-content:center}
+
+/* ============================================================
+   SHELL — phone container
+   ============================================================ */
+.shell{
+  width:360px;height:100vh;max-height:780px;
+  background:var(--bg);position:relative;overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,0.6);
+}
+@media(min-width:400px){
+  .shell{width:380px;border-radius:40px;height:780px;border:3px solid rgba(255,255,255,.07)}
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen{
+  position:absolute;inset:0;z-index:1;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;
+  transition:opacity .32s ease,transform .32s ease;
+  transform:translateX(24px);
+  overflow-y:auto;overflow-x:hidden;
+}
+.screen.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+.screen.slide-left{transform:translateX(-24px)}
+.screen::-webkit-scrollbar{width:0}
+
+/* ============================================================
+   AMBIENT GLOW
+   ============================================================ */
+.glow{
+  position:absolute;border-radius:50%;pointer-events:none;filter:blur(60px);
+}
+.glow-1{top:-80px;left:-60px;width:240px;height:240px;background:rgba(0,229,160,.13);z-index:0}
+.glow-2{bottom:-60px;right:-80px;width:220px;height:220px;background:rgba(0,201,255,.1);z-index:0}
+
+/* ============================================================
+   1 — SPLASH
+   ============================================================ */
+#splash{background:var(--bg);align-items:center;justify-content:center;gap:16px;z-index:10}
+.splash-ring{
+  position:absolute;width:200px;height:200px;border-radius:50%;
+  border:1.5px solid rgba(0,229,160,.15);
+  animation:ringPulse 3s ease-in-out infinite;
+}
+.splash-ring:nth-child(2){width:260px;height:260px;border-color:rgba(0,229,160,.08);animation-delay:.5s}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.08);opacity:1}}
+.splash-logo{
+  position:relative;z-index:2;
+  width:86px;height:86px;border-radius:24px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;font-size:42px;
+  box-shadow:0 0 36px rgba(0,229,160,.4);
+  animation:logoIn .55s cubic-bezier(.34,1.56,.64,1) .15s both;
+}
+@keyframes logoIn{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+.splash-title{
+  position:relative;z-index:2;font-size:34px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:fadeUp .45s ease .45s both;
+}
+.splash-sub{position:relative;z-index:2;color:var(--dim);font-size:13px;animation:fadeUp .45s ease .6s both}
+.splash-bar{
+  position:relative;z-index:2;margin-top:36px;
+  width:48px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;
+  animation:fadeUp .4s ease .8s both;
+}
+.splash-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--acc),var(--acc2));animation:barLoad 1.6s ease .1s forwards}
+@keyframes barLoad{from{width:0}to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   2 — LOGIN
+   ============================================================ */
+#login{background:var(--bg)}
+.auth-top{
+  padding:64px 24px 0;text-align:center;position:relative;z-index:1;
+  flex-shrink:0;
+}
+.auth-top .mini-logo{
+  width:56px;height:56px;border-radius:16px;margin:0 auto 14px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  box-shadow:0 0 20px rgba(0,229,160,.3);
+}
+.auth-top h1{font-size:24px;font-weight:700;margin-bottom:4px}
+.auth-top p{color:var(--dim);font-size:13px}
+
+.auth-form{padding:28px 22px 0;flex:1;position:relative;z-index:1}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px;letter-spacing:.4px;text-transform:uppercase}
+.field input{
+  width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);
+  background:var(--surf2);color:#fff;font-size:14px;font-family:var(--font);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.field input::placeholder{color:rgba(255,255,255,.28)}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,229,160,.15)}
+.field input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,87,87,.12)}
+.field .icon-wrap{position:relative}
+.field .icon-wrap input{padding-left:42px}
+.field .icon-wrap .fi{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px}
+.field .eye-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);
+}
+
+.error-msg{
+  color:var(--red);font-size:12px;margin-top:-10px;margin-bottom:8px;
+  padding-left:4px;min-height:18px;opacity:0;transition:opacity .2s;
+}
+.error-msg.show{opacity:1}
+
+.auth-btn{
+  width:100%;padding:14px;border-radius:13px;border:none;margin-top:8px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#0a0e1a;font-size:15px;font-weight:700;font-family:var(--font);
+  cursor:pointer;box-shadow:0 4px 20px rgba(0,229,160,.28);
+  transition:transform .15s,box-shadow .2s;
+}
+.auth-btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(0,229,160,.18)}
+
+.auth-divider{
+  display:flex;align-items:center;gap:10px;margin:20px 0;
+}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+.auth-divider span{color:var(--dim);font-size:12px}
+
+.auth-switch{text-align:center;padding:16px 0 28px}
+.auth-switch span{color:var(--dim);font-size:13px}
+.auth-switch a{color:var(--acc);font-weight:600;cursor:pointer;text-decoration:none}
+.auth-switch a:hover{text-decoration:underline}
+
+/* ============================================================
+   3 — REGISTER (reusa .auth-* styles)
+   ============================================================ */
+#register{background:var(--bg)}
+
+/* ============================================================
+   4 — ONBOARDING
+   ============================================================ */
+#onboard{background:var(--bg)}
+.ob-slides{flex:1;display:flex;overflow:hidden;position:relative}
+.ob-track{display:flex;width:300%;transition:transform .4s cubic-bezier(.4,0,.2,1)}
+.ob-slide{width:33.333%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;gap:16px}
+.ob-icon{width:96px;height:96px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:46px}
+.ob-icon.g{background:rgba(0,229,160,.1);box-shadow:0 0 28px rgba(0,229,160,.14)}
+.ob-icon.b{background:rgba(0,201,255,.1);box-shadow:0 0 28px rgba(0,201,255,.14)}
+.ob-icon.p{background:rgba(167,139,250,.1);box-shadow:0 0 28px rgba(167,139,250,.14)}
+.ob-title{font-size:21px;font-weight:700}
+.ob-desc{color:var(--dim);font-size:13.5px;line-height:1.55;max-width:260px}
+.ob-dots{display:flex;gap:8px;justify-content:center;padding:10px 0}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:rgba(255,255,255,.15);transition:all .3s}
+.ob-dot.on{width:24px;background:var(--acc)}
+.gBtn{
+  width:100%;padding:14px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#0a0e1a;font-size:15px;font-weight:700;font-family:var(--font);
+  cursor:pointer;box-shadow:0 4px 20px rgba(0,229,160,.28);transition:transform .15s
+}
+.gBtn:active{transform:scale(.96)}
+
+/* ============================================================
+   5 — CAMPOS
+   ============================================================ */
+#campos{background:var(--bg);padding-top:48px}
+.campos-head{text-align:center;padding:0 20px 6px}
+.campos-head h2{font-size:21px;font-weight:700;margin-bottom:5px}
+.campos-head p{color:var(--dim);font-size:13px;line-height:1.45}
+.campos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 18px;align-content:start}
+.c-card{
+  background:var(--surf);border:1.5px solid rgba(255,255,255,.07);
+  border-radius:15px;padding:16px 12px;cursor:pointer;
+  transition:all .22s;position:relative;overflow:hidden;
+}
+.c-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,160,.07),transparent 60%);opacity:0;transition:opacity .3s}
+.c-card:active{transform:scale(.96)}
+.c-card.sel{border-color:var(--acc);background:rgba(0,229,160,.06);box-shadow:0 0 16px rgba(0,229,160,.16)}
+.c-card.sel::before{opacity:1}
+.c-card .ck{position:absolute;top:9px;right:9px;width:21px;height:21px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .22s;z-index:1}
+.c-card.sel .ck{background:var(--acc);border-color:var(--acc);color:#0a0e1a;font-weight:700}
+.c-card .ci{font-size:24px;margin-bottom:5px;position:relative;z-index:1}
+.c-card .ct{font-size:13px;font-weight:600;position:relative;z-index:1}
+.c-card .cd{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.4;position:relative;z-index:1}
+.campos-btn{padding:10px 18px 26px}
+
+/* ============================================================
+   6 — WA SETUP
+   ============================================================ */
+#wasetup{background:var(--bg)}
+.wa-hero{background:linear-gradient(160deg,#0f4f3f,#0a2e25);padding:52px 22px 22px;text-align:center}
+.wa-hero .wl{font-size:48px;margin-bottom:6px}
+.wa-hero h2{font-size:19px;font-weight:700;color:#fff}
+.wa-hero p{color:rgba(255,255,255,.48);font-size:13px;margin-top:3px}
+.wa-prog{margin:0 18px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.wa-prog-fill{width:0%;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;transition:width .4s ease}
+.wa-steps{padding:16px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.wa-step{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--surf);border:1.5px solid rgba(255,255,255,.07);
+  border-radius:13px;padding:14px;cursor:pointer;transition:all .22s;
+}
+.wa-step:active{transform:scale(.97)}
+.wa-step.done{border-color:var(--acc);background:rgba(0,229,160,.05)}
+.wa-step .sn{width:30px;height:30px;border-radius:50%;flex-shrink:0;border:2.5px solid rgba(37,211,102,.35);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--wa);background:rgba(37,211,102,.1);transition:all .25s}
+.wa-step.done .sn{background:var(--wa);border-color:var(--wa);color:#fff}
+.wa-step .st strong{font-size:13px;color:#fff;display:block}
+.wa-step .st span{font-size:11.5px;color:rgba(255,255,255,.48);margin-top:2px;display:block}
+.wa-step .arr{color:var(--dim);font-size:18px;transition:color .25s}
+.wa-step.done .arr{color:var(--acc)}
+.wa-launch{
+  margin:14px 18px 24px;padding:14px;border-radius:13px;border:none;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#0a0e1a;font-size:15px;font-weight:700;font-family:var(--font);
+  cursor:pointer;opacity:.35;pointer-events:none;
+  box-shadow:0 4px 18px rgba(0,229,160,.22);transition:opacity .3s,transform .15s
+}
+.wa-launch.go{opacity:1;pointer-events:auto}
+.wa-launch:active{transform:scale(.96)}
+
+/* ============================================================
+   7 — CHAT
+   ============================================================ */
+#chat{background:var(--bg)}
+.chat-nav{display:flex;align-items:center;gap:10px;background:#0f5e4e;padding:50px 14px 11px;flex-shrink:0}
+.chat-nav .av{width:37px;height:37px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#0a0e1a}
+.chat-nav .info{flex:1}
+.chat-nav .info .nm{font-size:14px;font-weight:600;color:#fff}
+.chat-nav .info .ol{font-size:11px;color:#7adf94}
+.chat-nav .actions{display:flex;gap:8px}
+.chat-nav .actions button{background:none;border:none;cursor:pointer;padding:5px;display:flex;align-items:center;justify-content:center}
+.chat-nav .actions svg{width:19px;height:19px;fill:rgba(255,255,255,.72)}
+
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 10px;background:var(--chat-bg);background-image:radial-gradient(circle,rgba(255,255,255,.017) 1px,transparent 1px);background-size:22px 22px;display:flex;flex-direction:column;gap:9px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+.msg{max-width:90%;display:flex;flex-direction:column}
+.msg.in{align-items:flex-start}
+.msg.out{align-items:flex-end}
+.msg-bub{padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.5;color:#fff;animation:msgPop .22s ease}
+@keyframes msgPop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.in .msg-bub{background:var(--bub-in);border-bottom-left-radius:4px}
+.msg.out .msg-bub{background:var(--bub-out);border-bottom-right-radius:4px}
+.msg-time{font-size:10px;color:rgba(255,255,255,.36);margin-top:3px;padding:0 3px}
+.msg.out .msg-time{text-align:right}
+.tick{color:#7adf94}
+
+.typing{background:var(--bub-in);border-radius:14px;border-bottom-left-radius:4px;padding:11px 15px;display:flex;gap:5px;align-items:center;width:54px;animation:msgPop .22s ease}
+.typing span{width:7px;height:7px;background:rgba(255,255,255,.5);border-radius:50%;animation:bounce 1.2s ease infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.chips-wrap{background:var(--chat-bg);padding:8px 10px 5px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0}
+.chip{background:rgba(37,211,102,.11);border:1px solid rgba(37,211,102,.28);border-radius:18px;padding:5px 12px;font-size:12px;color:#7adf94;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .16s}
+.chip:active{transform:scale(.94);background:rgba(37,211,102,.2)}
+
+.chat-bar{background:var(--chat-bg);padding:8px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.04)}
+.chat-bar input{flex:1;background:#2a3a32;border:none;border-radius:21px;padding:10px 15px;color:#fff;font-size:13.5px;font-family:var(--font);outline:none}
+.chat-bar input::placeholder{color:rgba(255,255,255,.3)}
+.chat-bar input:focus{box-shadow:0 0 0 2px rgba(37,211,102,.28)}
+.send-btn{width:37px;height:37px;border-radius:50%;border:none;background:var(--wa);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .14s;flex-shrink:0}
+.send-btn:active{transform:scale(.91)}
+.send-btn svg{width:17px;height:17px;fill:#fff}
+
+/* ============================================================
+   DRAWER + ARCHITECTURE MODAL  (same as before, compact)
+   ============================================================ */
+.overlay{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .28s}
+.overlay.on{opacity:1;pointer-events:auto}
+.drawer{position:absolute;top:0;right:-100%;bottom:0;width:72%;background:var(--surf);z-index:51;transition:right .3s cubic-bezier(.4,0,.2,1);box-shadow:-6px 0 36px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.drawer.on{right:0}
+.drawer-head{background:linear-gradient(135deg,#0f4f3f,#0a2e25);padding:54px 18px 16px;display:flex;align-items:center;gap:12px}
+.drawer-head .dav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#0a0e1a}
+.drawer-head .dn{font-size:15px;font-weight:700;color:#fff}
+.drawer-head .ds{font-size:12px;color:rgba(255,255,255,.48)}
+.drawer-close{position:absolute;top:50px;right:14px;background:none;border:none;color:rgba(255,255,255,.55);font-size:21px;cursor:pointer}
+.drawer-body{flex:1;overflow-y:auto;padding:18px}
+.d-label{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
+.mini-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.mini-card{background:var(--surf2);border:1.5px solid rgba(255,255,255,.07);border-radius:11px;padding:11px 8px;cursor:pointer;transition:all .18s;text-align:center}
+.mini-card:active{transform:scale(.95)}
+.mini-card.sel{border-color:var(--acc);background:rgba(0,229,160,.06)}
+.mini-card .mi{font-size:19px;margin-bottom:3px}
+.mini-card .mn{font-size:11.5px;font-weight:600;color:var(--txt)}
+.d-btn{width:100%;padding:13px;border-radius:11px;border:1.5px solid rgba(255,255,255,.1);background:var(--surf2);color:var(--txt);font-size:13.5px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:9px;margin-bottom:9px;transition:border-color .2s}
+.d-btn:active{transform:scale(.96)}
+.d-btn:hover{border-color:var(--acc2)}
+.d-btn .dbi{font-size:18px}
+.d-btn.logout{border-color:rgba(255,87,87,.2);color:var(--red)}
+.d-btn.logout:hover{border-color:var(--red)}
+.drawer-ver{padding:14px 18px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--dim);font-size:11px}
+
+/* Architecture modal */
+.arch-ov{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:opacity .28s;display:flex;align-items:flex-end}
+.arch-ov.on{opacity:1;pointer-events:auto}
+.arch-mod{width:100%;background:var(--surf);border-radius:22px 22px 0 0;max-height:82%;overflow-y:auto;transform:translateY(100%);transition:transform .33s cubic-bezier(.4,0,.2,1);padding-bottom:24px}
+.arch-ov.on .arch-mod{transform:translateY(0)}
+.arch-mod-head{padding:13px 18px 0;display:flex;justify-content:space-between;align-items:center}
+.arch-mod-head h3{font-size:16px;font-weight:700}
+.arch-mod-close{background:none;border:none;color:var(--dim);font-size:21px;cursor:pointer}
+.arch-mod-body{padding:16px}
+.a-node{display:flex;align-items:center;gap:11px;background:var(--surf2);border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:11px 12px}
+.a-node .ani{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.ani.g{background:rgba(0,229,160,.12)}.ani.b{background:rgba(0,201,255,.12)}.ani.p{background:rgba(167,139,250,.12)}.ani.o{background:rgba(251,146,60,.12)}
+.a-node .ant{flex:1}
+.a-node .ant strong{font-size:12.5px;color:var(--txt);display:block}
+.a-node .ant span{font-size:10.5px;color:var(--dim)}
+.a-tag{font-size:10px;font-weight:600;background:rgba(255,255,255,.06);color:var(--dim);padding:2px 7px;border-radius:9px;white-space:nowrap}
+.a-arrow{text-align:center;color:var(--acc);font-size:17px;opacity:.45;padding:3px 0;animation:arP 2s ease-in-out infinite}
+@keyframes arP{0%,100%{opacity:.3}50%{opacity:.75}}
+
+/* ============================================================
+   BACK BUTTON
+   ============================================================ */
+.back-btn{position:absolute;top:48px;left:14px;z-index:5;background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:var(--font);font-size:13px;font-weight:500}
+.back-btn:active{color:var(--acc)}
+
+/* ============================================================
+   LOADING SPINNER (for simulated API calls)
+   ============================================================ */
+.btn-loading{position:relative;overflow:hidden}
+.btn-loading::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.25) 50%,transparent 100%);
+  animation:shimmer .7s linear infinite;
+}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── AMBIENT ── -->
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+
+<!-- ============================================================
+     SPLASH
+     ============================================================ -->
+<div class="screen active" id="splash">
+  <div class="splash-ring"></div>
+  <div class="splash-ring"></div>
+  <div class="splash-logo">🤖</div>
+  <div class="splash-title">PedroBox</div>
+  <div class="splash-sub">Tu asistente virtual inteligente</div>
+  <div class="splash-bar"></div>
+</div>
+
+<!-- ============================================================
+     LOGIN
+     ============================================================ -->
+<div class="screen" id="login">
+  <div class="auth-top">
+    <div class="mini-logo">🤖</div>
+    <h1>Bienvenido</h1>
+    <p>Inicia sesión para continuar</p>
+  </div>
+  <div class="auth-form">
+    <div class="field">
+      <label>Correo electrónico</label>
+      <div class="icon-wrap">
+        <span class="fi">📧</span>
+        <input type="email" id="login-email" placeholder="tu@correo.com" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <div class="icon-wrap">
+        <span class="fi">🔒</span>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="off"/>
+        <button class="eye-btn" onclick="togglePass('login-pass',this)">👁️</button>
+      </div>
+    </div>
+    <div class="error-msg" id="login-err"></div>
+    <button class="auth-btn" id="loginBtn" onclick="doLogin()">Iniciar Sesión</button>
+    <div class="auth-divider"><span>o</span></div>
+    <button class="auth-btn" style="background:var(--surf2);color:var(--txt);box-shadow:none;border:1.5px solid rgba(255,255,255,.1)" onclick="goScreen('register')">
+      Registrar Cuenta
+    </button>
+  </div>
+  <div class="auth-switch">
+    <span>¿No tienes cuenta? </span><a onclick="goScreen('register')">Créala aquí</a>
+  </div>
+</div>
+
+<!-- ============================================================
+     REGISTER
+     ============================================================ -->
+<div class="screen" id="register">
+  <button class="back-btn" onclick="goScreen('login')">← Atrás</button>
+  <div class="auth-top" style="padding-top:56px">
+    <div class="mini-logo">🤖</div>
+    <h1>Crear Cuenta</h1>
+    <p>Completa los datos para registrarte</p>
+  </div>
+  <div class="auth-form" style="padding-top:22px">
+    <div class="field">
+      <label>Nombre completo</label>
+      <div class="icon-wrap">
+        <span class="fi">👤</span>
+        <input type="text" id="reg-name" placeholder="Juan Pérez" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Correo electrónico</label>
+      <div class="icon-wrap">
+        <span class="fi">📧</span>
+        <input type="email" id="reg-email" placeholder="tu@correo.com" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Número de WhatsApp</label>
+      <div class="icon-wrap">
+        <span class="fi">📱</span>
+        <input type="tel" id="reg-phone" placeholder="+51 900 000 000" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <div class="icon-wrap">
+        <span class="fi">🔒</span>
+        <input type="password" id="reg-pass" placeholder="Mín. 6 caracteres" autocomplete="off"/>
+        <button class="eye-btn" onclick="togglePass('reg-pass',this)">👁️</button>
+      </div>
+    </div>
+    <div class="error-msg" id="reg-err"></div>
+    <button class="auth-btn" id="regBtn" onclick="doRegister()">Crear Cuenta</button>
+  </div>
+  <div class="auth-switch">
+    <span>¿Ya tienes cuenta? </span><a onclick="goScreen('login')">Inicia sesión</a>
+  </div>
+</div>
+
+<!-- ============================================================
+     ONBOARDING
+     ============================================================ -->
+<div class="screen" id="onboard">
+  <div class="ob-slides">
+    <div class="ob-track" id="obTrack">
+      <div class="ob-slide">
+        <div class="ob-icon g">🤖</div>
+        <div class="ob-title">Hola, soy PedroBox</div>
+        <div class="ob-desc">Soy un asistente virtual creado para los jóvenes de Majes. Aquí para simplificar tu vida diaria.</div>
+      </div>
+      <div class="ob-slide">
+        <div class="ob-icon b">📱</div>
+        <div class="ob-title">Conectado por WhatsApp</div>
+        <div class="ob-desc">Todas mis respuestas llegan a tu WhatsApp Business. Sin apps extra, solo lo que ya conoces.</div>
+      </div>
+      <div class="ob-slide">
+        <div class="ob-icon p">⚙️</div>
+        <div class="ob-title">Configúrame según tú</div>
+        <div class="ob-desc">Elige tu campo: estudios, negocio, empleo y más. Yo me adapto al contexto que necesitas.</div>
+      </div>
+    </div>
+  </div>
+  <div class="ob-dots" id="obDots">
+    <div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div>
+  </div>
+  <button class="gBtn" style="margin:0 22px 28px" id="obNext" onclick="obNext()">Siguiente</button>
+</div>
+
+<!-- ============================================================
+     CAMPOS
+     ============================================================ -->
+<div class="screen" id="campos">
+  <div class="campos-head" style="margin-top:50px">
+    <h2>Configura tu Campo</h2>
+    <p>Selecciona el área que te interesa. PedroBox adapta sus respuestas.</p>
+  </div>
+  <div class="campos-grid" id="camposGrid">
+    <div class="c-card sel" data-campo="estudiantil" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">📚</div><div class="ct">Estudiantil</div><div class="cd">Tareas, horarios y recursos</div></div>
+    <div class="c-card" data-campo="negocio" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">💼</div><div class="ct">Negocio</div><div class="cd">Ventas e inventario</div></div>
+    <div class="c-card" data-campo="empleo" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">🏗️</div><div class="ct">Empleo</div><div class="cd">Trabajo y CVs</div></div>
+    <div class="c-card" data-campo="salud" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">🏥</div><div class="ct">Salud</div><div class="cd">Citas y centros médicos</div></div>
+    <div class="c-card" data-campo="transporte" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">🚌</div><div class="ct">Transporte</div><div class="cd">Rutas y horarios</div></div>
+    <div class="c-card" data-campo="entretenimiento" onclick="pickCampo(this)"><div class="ck">✓</div><div class="ci">🎮</div><div class="ct">Entretenimiento</div><div class="cd">Eventos y actividades</div></div>
+  </div>
+  <div class="campos-btn"><button class="gBtn" onclick="goScreen('wasetup')">Continuar →</button></div>
+</div>
+
+<!-- ============================================================
+     WA SETUP
+     ============================================================ -->
+<div class="screen" id="wasetup">
+  <button class="back-btn" onclick="goScreen('campos')">← Atrás</button>
+  <div class="wa-hero">
+    <div class="wl">💚</div>
+    <h2>Conecta WhatsApp Business</h2>
+    <p>Completa los pasos para activar PedroBox</p>
+  </div>
+  <div class="wa-prog"><div class="wa-prog-fill" id="waFill"></div></div>
+  <div class="wa-steps" id="waSteps">
+    <div class="wa-step" data-step="0" onclick="waComplete(this)"><div class="sn">1</div><div class="st"><strong>APK Instalada</strong><span>Ya estás en la aplicación ✓</span></div><div class="arr">›</div></div>
+    <div class="wa-step" data-step="1" onclick="waComplete(this)"><div class="sn">2</div><div class="st"><strong>Campo configurado</strong><span>Seleccionaste tu campo ✓</span></div><div class="arr">›</div></div>
+    <div class="wa-step" data-step="2" onclick="waComplete(this)"><div class="sn">3</div><div class="st"><strong>Conecta tu número</strong><span>Toca para vincular WhatsApp</span></div><div class="arr">›</div></div>
+    <div class="wa-step" data-step="3" onclick="waComplete(this)"><div class="sn">4</div><div class="st"><strong>Verificación</strong><span>Confirma el código enviado</span></div><div class="arr">›</div></div>
+  </div>
+  <button class="wa-launch" id="waLaunch" onclick="goScreen('chat')">Iniciar Chat →</button>
+</div>
+
+<!-- ============================================================
+     CHAT
+     ============================================================ -->
+<div class="screen" id="chat">
+  <div class="chat-nav">
+    <div class="av">P</div>
+    <div class="info"><div class="nm">PedroBox</div><div class="ol">● En línea ahora</div></div>
+    <div class="actions">
+      <button onclick="openArch()"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></button>
+      <button onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+    </div>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chips-wrap" id="chipsWrap"></div>
+  <div class="chat-bar">
+    <input id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();sendMessage()}"/>
+    <button class="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<!-- ── DRAWER ── -->
+<div class="overlay" id="ovDrawer" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  <div class="drawer-head">
+    <div class="dav" id="drawerInitials">JP</div>
+    <div><div class="dn" id="drawerName">Juan Pérez</div><div class="ds" id="drawerCampo">Campo: Estudiantil</div></div>
+  </div>
+  <div class="drawer-body">
+    <div class="d-label">Cambiar Campo</div>
+    <div class="mini-campos" id="miniCampos">
+      <div class="mini-card sel" data-campo="estudiantil" onclick="changeCampo(this)"><div class="mi">📚</div><div class="mn">Estudiantil</div></div>
+      <div class="mini-card" data-campo="negocio" onclick="changeCampo(this)"><div class="mi">💼</div><div class="mn">Negocio</div></div>
+      <div class="mini-card" data-campo="empleo" onclick="changeCampo(this)"><div class="mi">🏗️</div><div class="mn">Empleo</div></div>
+      <div class="mini-card" data-campo="salud" onclick="changeCampo(this)"><div class="mi">🏥</div><div class="mn">Salud</div></div>
+      <div class="mini-card" data-campo="transporte" onclick="changeCampo(this)"><div class="mi">🚌</div><div class="mn">Transporte</div></div>
+      <div class="mini-card" data-campo="entretenimiento" onclick="changeCampo(this)"><div class="mi">🎮</div><div class="mn">Entrete.</div></div>
+    </div>
+    <div class="d-label">Sistema</div>
+    <button class="d-btn" onclick="closeDrawer();setTimeout(openArch,300)"><span class="dbi">🏗️</span> Ver Arquitectura</button>
+    <button class="d-btn" onclick="closeDrawer();resetChat()"><span class="dbi">🔄</span> Reiniciar Chat</button>
+    <button class="d-btn logout" onclick="doLogout()"><span class="dbi">🚪</span> Cerrar Sesión</button>
+  </div>
+  <div class="drawer-ver">PedroBox v1.0 · Prototipo · Majes, Arequipa</div>
+</div>
+
+<!-- ── ARCHITECTURE MODAL ── -->
+<div class="arch-ov" id="archOv" onclick="closeArch()">
+  <div class="arch-mod" onclick="event.stopPropagation()">
+    <div class="arch-mod-head"><h3>Arquitectura del Sistema</h3><button class="arch-mod-close" onclick="closeArch()">✕</button></div>
+    <div class="arch-mod-body">
+      <div class="a-node"><div class="ani g">📱</div><div class="ant"><strong>APK Mobile</strong><span>Configuración y campo</span></div><div class="a-tag">Kotlin</div></div>
+      <div class="a-arrow">▼</div>
+      <div class="a-node"><div class="ani b">📡</div><div class="ant"><strong>WhatsApp Business API</strong><span>Mensajes tiempo real</span></div><div class="a-tag">REST</div></div>
+      <div class="a-arrow">▼</div>
+      <div class="a-node"><div class="ani p">🖥️</div><div class="ant"><strong>XAMPP — Apache + PHP</strong><span>Servidor local procesa peticiones</span></div><div class="a-tag">PHP 8.2</div></div>
+      <div class="a-arrow">▼</div>
+      <div class="a-node"><div class="ani o">🧠</div><div class="ant"><strong>Motor de Respuestas</strong><span>Keywords + reglas por campo</span></div><div class="a-tag">Motor</div></div>
+      <div class="a-arrow">▼</div>
+      <div class="a-node"><div class="ani g">🗄️</div><div class="ant"><strong>phpMyAdmin — MySQL</strong><span>Usuarios, campos, historial</span></div><div class="a-tag">MariaDB</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// ─── CONFIG ────────────────────────────────────────────────
+// En producción este URL apunta a tu XAMPP:
+// const API_BASE = 'http://192.168.1.X/pedrobox/backend/';
+// Para el prototipo simulamos las respuestas:
+const API_BASE = null; // null = modo simulado (prototipo)
+
+// ─── STATE ─────────────────────────────────────────────────
+let currentUser = null;          // { name, email, phone, campo }
+let currentCampo = 'estudiantil';
+let obPage = 0;
+let waCount = 0;
+
+// ─── SIMULATED USER DB (reemplaza con llamadas a PHP) ─────
+const USERS_DB = [
+  { email:'demo@pedrobox.com', pass:'123456', name:'Usuario Demo', phone:'+51 900 000 000', campo:'estudiantil' }
+];
+
+// ─── CAMPOS DATA ───────────────────────────────────────────
+const CAMPOS = {
+  estudiantil:{icon:'📚',label:'Estudiantil',welcome:'👋 ¡Hola, <b>'+'{name}'+'</b>! Estoy en modo <b>Estudiantil</b>.<br>Puedo ayudarte con:<br>• Recursos académicos<br>• Recordatorios de exámenes<br>• Horarios e instituciones en Majes',chips:['📚 Recursos','⏰ Exámenes','🏫 Instituciones','📝 Horarios']},
+  negocio:{icon:'💼',label:'Negocio',welcome:'👋 ¡Hola, <b>{name}</b>! Estoy en modo <b>Negocio</b>.<br>Te ayudo con:<br>• Precios y cotizaciones<br>• Gestión de inventario<br>• Respuestas auto para clientes',chips:['💰 Precios','📦 Inventario','🤝 Clientes','📊 Ventas']},
+  empleo:{icon:'🏗️',label:'Empleo',welcome:'👋 ¡Hola, <b>{name}</b>! Estoy en modo <b>Empleo</b>.<br>Te ayudo con:<br>• Ofertas de trabajo locales<br>• Preparación de CVs<br>• Consejos para entrevistas',chips:['💼 Ofertas','📄 CV','🎯 Entrevistas','📍 Cerca de mí']},
+  salud:{icon:'🏥',label:'Salud',welcome:'👋 ¡Hola, <b>{name}</b>! Estoy en modo <b>Salud</b>.<br>Te ayudo con:<br>• Recordatorios de citas<br>• Centros de salud cercanos<br>• Información médica básica',chips:['🏥 Centros','⏰ Cita','💊 Info médica','🚑 Emergencia']},
+  transporte:{icon:'🚌',label:'Transporte',welcome:'👋 ¡Hola, <b>{name}</b>! Estoy en modo <b>Transporte</b>.<br>Te ayudo con:<br>• Rutas de buses en Majes<br>• Horarios actualizados<br>• Costos de pasajes',chips:['🚌 Rutas','⏰ Horarios','💵 Costos','📍 Cerca']},
+  entretenimiento:{icon:'🎮',label:'Entretenimiento',welcome:'👋 ¡Hola, <b>{name}</b>! Estoy en modo <b>Entretenimiento</b>.<br>Te ayudo con:<br>• Eventos locales en Majes<br>• Actividades y esparcimiento<br>• Noticias de la comunidad',chips:['🎉 Eventos','🎨 Actividades','📰 Noticias','🎵 Música']}
+};
+
+// ─── SPLASH AUTO ───────────────────────────────────────────
+setTimeout(() => goScreen('login'), 2300);
+
+// ─── SCREEN NAV ────────────────────────────────────────────
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.classList.toggle('slide-left', false);
+  });
+  const t = document.getElementById(id);
+  t.classList.add('active');
+  if(id === 'chat' && !document.getElementById('chatMsgs').children.length) initChat();
+}
+
+// ─── TOGGLE PASSWORD ───────────────────────────────────────
+function togglePass(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(inp.type === 'password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁️'; }
+}
+
+// ─── SHOW ERROR ────────────────────────────────────────────
+function showErr(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+// ─── LOGIN ─────────────────────────────────────────────────
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value.trim();
+  showErr('login-err','');
+  // Clear border errors
+  ['login-email','login-pass'].forEach(id => document.getElementById(id).classList.remove('err'));
+
+  if(!email){ document.getElementById('login-email').classList.add('err'); showErr('login-err','⚠️ Ingresa tu correo electrónico'); return; }
+  if(!pass) { document.getElementById('login-pass').classList.add('err'); showErr('login-err','⚠️ Ingresa tu contraseña'); return; }
+  if(!email.includes('@')){ document.getElementById('login-email').classList.add('err'); showErr('login-err','⚠️ Correo no válido'); return; }
+
+  // Simulate API call
+  const btn = document.getElementById('loginBtn');
+  btn.classList.add('btn-loading');
+  btn.textContent = 'Verificando...';
+
+  setTimeout(() => {
+    btn.classList.remove('btn-loading');
+    btn.textContent = 'Iniciar Sesión';
+
+    // ── REAL MODE: usar fetch al backend PHP ──
+    // fetch(API_BASE + 'login.php', { method:'POST', headers:{'Content-Type':'application/json'},
+    //   body: JSON.stringify({email, pass}) })
+    // .then(r => r.json()).then(data => { ... });
+
+    // ── SIMULATED MODE ──
+    const found = USERS_DB.find(u => u.email === email && u.pass === pass);
+    if(found){
+      currentUser = { name: found.name, email: found.email, phone: found.phone, campo: found.campo };
+      currentCampo = found.campo;
+      updateDrawer();
+      goScreen('onboard');
+    } else {
+      showErr('login-err','❌ Correo o contraseña incorrectos');
+    }
+  }, 1200);
+}
+
+// ─── REGISTER ──────────────────────────────────────────────
+function doRegister(){
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const pass  = document.getElementById('reg-pass').value.trim();
+  showErr('reg-err','');
+  ['reg-name','reg-email','reg-phone','reg-pass'].forEach(id => document.getElementById(id).classList.remove('err'));
+
+  if(!name) { document.getElementById('reg-name').classList.add('err'); showErr('reg-err','⚠️ Ingresa tu nombre'); return; }
+  if(!email){ document.getElementById('reg-email').classList.add('err'); showErr('reg-err','⚠️ Ingresa tu correo'); return; }
+  if(!email.includes('@')){ document.getElementById('reg-email').classList.add('err'); showErr('reg-err','⚠️ Correo no válido'); return; }
+  if(!phone){ document.getElementById('reg-phone').classList.add('err'); showErr('reg-err','⚠️ Ingresa tu número WhatsApp'); return; }
+  if(!pass) { document.getElementById('reg-pass').classList.add('err'); showErr('reg-err','⚠️ Ingresa una contraseña'); return; }
+  if(pass.length < 6){ document.getElementById('reg-pass').classList.add('err'); showErr('reg-err','⚠️ La contraseña debe tener mín. 6 caracteres'); return; }
+  if(USERS_DB.find(u => u.email === email)){ document.getElementById('reg-email').classList.add('err'); showErr('reg-err','❌ Este correo ya está registrado'); return; }
+
+  const btn = document.getElementById('regBtn');
+  btn.classList.add('btn-loading');
+  btn.textContent = 'Creando cuenta...';
+
+  setTimeout(() => {
+    btn.classList.remove('btn-loading');
+    btn.textContent = 'Crear Cuenta';
+
+    // ── REAL MODE ──
+    // fetch(API_BASE + 'register.php', { method:'POST', headers:{'Content-Type':'application/json'},
+    //   body: JSON.stringify({name, email, phone, pass}) })
+    // .then(r => r.json()).then(data => { ... });
+
+    // ── SIMULATED ──
+    const newUser = { email, pass, name, phone, campo:'estudiantil' };
+    USERS_DB.push(newUser);
+    currentUser = { name, email, phone, campo:'estudiantil' };
+    currentCampo = 'estudiantil';
+    updateDrawer();
+    goScreen('onboard');
+  }, 1400);
+}
+
+// ─── LOGOUT ────────────────────────────────────────────────
+function doLogout(){
+  closeDrawer();
+  currentUser = null;
+  currentCampo = 'estudiantil';
+  document.getElementById('chatMsgs').innerHTML = '';
+  // reset WA steps
+  waCount = 0;
+  document.querySelectorAll('.wa-step').forEach(s => { s.classList.remove('done'); s.querySelector('.sn').textContent = s.dataset.step ? String(Number(s.dataset.step)+1) : '1'; s.querySelector('.arr').style.color=''; });
+  document.getElementById('waFill').style.width = '0%';
+  document.getElementById('waLaunch').classList.remove('go');
+  // reset onboard
+  obPage = 0;
+  document.getElementById('obTrack').style.transform = 'translateX(0%)';
+  document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('on', i===0));
+  document.getElementById('obNext').textContent = 'Siguiente';
+  // clear inputs
+  ['login-email','login-pass','reg-name','reg-email','reg-phone','reg-pass'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  showErr('login-err','');
+  showErr('reg-err','');
+  goScreen('login');
+}
+
+// ─── DRAWER ────────────────────────────────────────────────
+function updateDrawer(){
+  if(!currentUser) return;
+  const initials = currentUser.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('drawerInitials').textContent = initials;
+  document.getElementById('drawerName').textContent = currentUser.name;
+  document.getElementById('drawerCampo').textContent = 'Campo: ' + CAMPOS[currentCampo].label;
+  // sync mini-campo selection
+  document.querySelectorAll('#miniCampos .mini-card').forEach(c => c.classList.toggle('sel', c.dataset.campo === currentCampo));
+}
+function openDrawer(){ document.getElementById('ovDrawer').classList.add('on'); document.getElementById('drawer').classList.add('on'); }
+function closeDrawer(){ document.getElementById('ovDrawer').classList.remove('on'); document.getElementById('drawer').classList.remove('on'); }
+function changeCampo(el){
+  document.querySelectorAll('#miniCampos .mini-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  currentCampo = el.dataset.campo;
+  // sync campos screen
+  document.querySelectorAll('#camposGrid .c-card').forEach(c => c.classList.toggle('sel', c.dataset.campo === currentCampo));
+  updateDrawer();
+  closeDrawer();
+  resetChat();
+}
+
+// ─── ONBOARDING ────────────────────────────────────────────
+function obNext(){
+  if(obPage < 2){
+    obPage++;
+    document.getElementById('obTrack').style.transform = `translateX(-${obPage*33.333}%)`;
+    document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('on', i===obPage));
+    if(obPage===2) document.getElementById('obNext').textContent = 'Empezar →';
+  } else { goScreen('campos'); }
+}
+// swipe onboard
+let _tsx=0;
+document.getElementById('onboard').addEventListener('touchstart', e => { _tsx = e.touches[0].clientX; },{passive:true});
+document.getElementById('onboard').addEventListener('touchend', e => {
+  const diff = _tsx - e.changedTouches[0].clientX;
+  if(Math.abs(diff) > 42){
+    if(diff > 0 && obPage < 2) obPage++;
+    else if(diff < 0 && obPage > 0) obPage--;
+    document.getElementById('obTrack').style.transform = `translateX(-${obPage*33.333}%)`;
+    document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('on', i===obPage));
+    document.getElementById('obNext').textContent = obPage===2 ? 'Empezar →' : 'Siguiente';
+  }
+},{passive:true});
+
+// ─── CAMPOS SELECTION ──────────────────────────────────────
+function pickCampo(el){
+  document.querySelectorAll('#camposGrid .c-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  currentCampo = el.dataset.campo;
+}
+
+// ─── WA SETUP ──────────────────────────────────────────────
+function waComplete(el){
+  const idx = Number(el.dataset.step);
+  if(idx > waCount) return;
+  if(!el.classList.contains('done')){
+    el.classList.add('done');
+    el.querySelector('.sn').textContent = '✓';
+    waCount++;
+    document.getElementById('waFill').style.width = (waCount*25)+'%';
+    if(waCount===4) document.getElementById('waLaunch').classList.add('go');
+  }
+}
+// Auto-complete steps 0 & 1 when screen shows (APK installed + campo done)
+const _origGoScreen = goScreen;
+goScreen = function(id){
+  _origGoScreen(id);
+  if(id==='wasetup'){
+    setTimeout(() => { const steps = document.querySelectorAll('.wa-step'); steps[0] && steps[0].click(); }, 500);
+    setTimeout(() => { const steps = document.querySelectorAll('.wa-step'); steps[1] && steps[1].click(); }, 1100);
+  }
+};
+
+// ─── CHAT ENGINE ───────────────────────────────────────────
+function initChat(){
+  document.getElementById('chatMsgs').innerHTML = '';
+  updateChips();
+  const welcomeMsg = CAMPOS[currentCampo].welcome.replace(/\{name\}/g, currentUser ? currentUser.name.split(' ')[0] : 'Amigo');
+  setTimeout(() => addBotMsg(welcomeMsg), 550);
+}
+function updateChips(){
+  const wrap = document.getElementById('chipsWrap');
+  wrap.innerHTML = CAMPOS[currentCampo].chips.map(c => `<button class="chip" onclick="sendChip('${c}')">${c}</button>`).join('');
+}
+function addBotMsg(html){
+  const el = document.getElementById('chatMsgs');
+  const t = document.createElement('div'); t.className='typing'; t.id='_typ'; t.innerHTML='<span></span><span></span><span></span>';
+  el.appendChild(t); el.scrollTop = el.scrollHeight;
+  const delay = Math.min(500 + html.replace(/<[^>]*>/g,'').length * 1.4, 2600);
+  setTimeout(() => {
+    const rem = document.getElementById('_typ'); if(rem) rem.remove();
+    const time = new Date();
+    const msg = document.createElement('div'); msg.className = 'msg in';
+    msg.innerHTML = `<div class="msg-bub">${html}</div><div class="msg-time">${pad(time.getHours())}:${pad(time.getMinutes())}</div>`;
+    el.appendChild(msg); el.scrollTop = el.scrollHeight;
+  }, delay);
+}
+function addUserMsg(text){
+  const el = document.getElementById('chatMsgs');
+  const time = new Date();
+  const msg = document.createElement('div'); msg.className = 'msg out';
+  msg.innerHTML = `<div class="msg-bub">${text}</div><div class="msg-time">${pad(time.getHours())}:${pad(time.getMinutes())} <span class="tick">✓✓</span></div>`;
+  el.appendChild(msg); el.scrollTop = el.scrollHeight;
+}
+function sendMessage(){
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  addUserMsg(text);
+  // ── REAL: enviar al backend ──
+  // fetch(API_BASE+'chat.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({msg:text,campo:currentCampo,user:currentUser})})
+  // .then(r=>r.json()).then(d=>addBotMsg(d.response));
+  addBotMsg(getBot(text, currentCampo));
+}
+function sendChip(text){ document.getElementById('chatInput').value=''; addUserMsg(text); addBotMsg(getBot(text, currentCampo)); }
+function resetChat(){ document.getElementById('chatMsgs').innerHTML=''; initChat(); }
+function pad(n){ return n.toString().padStart(2,'0'); }
+
+// ─── BOT RESPONSE ENGINE ───────────────────────────────────
+function getBot(text, campo){
+  const t = text.toLowerCase().replace(/[^a-záéíóúñü\s]/g,'');
+  const c = CAMPOS[campo];
+  const nm = currentUser ? currentUser.name.split(' ')[0] : 'Amigo';
+
+  if(/^(hola|hi|hey|buenos|buenas|saludos)/.test(t.trim())) return c.welcome.replace(/\{name\}/g, nm);
+  if(t.includes('recordatorio')||t.includes('recordar')||t.includes('cita')) return '⏰ <b>Crear recordatorio</b><br><br>Dime:<br>• ¿Qué necesitas recordar?<br>• ¿Cuándo? (fecha y hora)<br><br>Ejemplo: <i>"Examen de matemáticas el viernes a las 10 AM"</i><br><br>Te lo guardo y te aviso a tiempo 😊';
+  if(t.includes('mas info')||t.includes('info')) {
+    const M={estudiantil:'📚 <b>Recursos recomendados:</b><br>• Khan Academy (gratis)<br>• Biblioteca Virtual UNA<br>• Apps de estudio en Play Store<br><br>¿Necesitas algo específico?',negocio:'💼 <b>Para tu negocio:</b><br>• Facturación electrónica<br>• Marketing en redes sociales<br>• Plantillas de precios<br><br>¿Cuál aspecto te interesa?',empleo:'🏗️ <b>Recursos de empleo:</b><br>• Plataformas de trabajo locales<br>• Plantillas de CVs profesionales<br>• Guía de entrevistas<br><br>¿Quieres orientación?',salud:'🏥 <b>Centros en Majes:</b><br>• Centro de Salud Majes<br>• Consultorio 24h<br>• Farmacia Comunal<br><br>¿Necesitas una cita?',transporte:'🚌 <b>Rutas principales:</b><br>• Ruta 1: Majes ↔ Arequipa<br>• Ruta 2: Majes ↔ Camanari<br>• Ruta 3: Centro local<br><br>¿A dónde vas?',entretenimiento:'🎮 <b>Actividades en Majes:</b><br>• Plaza Central — sábados<br>• Parque de Majes<br>• Eventos culturales mensuales<br><br>¿Cuál te interesa?'};
+    return M[campo];
+  }
+  if(t.includes('otro tema')||t.includes('cambiar')) return '🔄 ¡Claro! Abre el menú ☰ arriba a la derecha para cambiar de campo. O dime directamente el tema.';
+  if(t.includes('donde estoy')||t.includes('ubicacion')||t.includes('cerca')) return '📍 <b>Estás en Majes, Arequipa</b><br><br>PedroBox está configurado para esta zona. Te ayudo a encontrar recursos y servicios cercanos.<br><br>¿Qué necesitas buscar?';
+  if(t.includes('recursos')||t.includes('estudio')) return '📚 <b>Top recursos:</b><br>• Khan Academy — Videos gratuitos<br>• Coursera — Cursos online<br>• YouTube Education<br>• Quizlet — Tarjetas memoria<br><br>¿Quieres un recurso específico?';
+  if(t.includes('instituciones')||t.includes('escuela')||t.includes('universidad')) return '🏫 <b>Instituciones en Majes:</b><br>• CETpad — Formación técnica<br>• Filial UNA — Universidad Nacional<br>• Instituto Educativo Majes<br><br>¿Info de alguna en particular?';
+  if(t.includes('examen')) return '📝 <b>¿Cuándo es tu examen?</b><br>Dime la fecha y te ayudo con:<br>• Un recordatorio automático<br>• Un plan de estudio<br>• Recursos según el tema';
+  if(t.includes('precio')||t.includes('cotizacion')||t.includes('costo')) return '💰 <b>Generador de precios</b><br>Ingresa:<br>• Producto o servicio<br>• Cantidad<br>• Precio base<br><br>Calculo el precio final con IGV incluido.';
+  if(t.includes('cliente')||t.includes('atencion')) return '🤝 <b>Respuestas automáticas</b><br>Configura respuestas cuando un cliente escribe:<br>• "Hola" → Bienvenida<br>• "Precio" → Lista de precios<br>• "Horario" → Horarios<br><br>¿Quieres configurar una?';
+  if(t.includes('oferta')||t.includes('trabajo')||t.includes('empleo')) return '💼 <b>Ofertas en Majes:</b><br>• Vendedor — Tienda Almacén<br>• Asistente contable<br>• Repartidor express<br><br>¿Te interesa alguna?';
+  if(t.includes('cv')||t.includes('curriculum')) return '📄 <b>Creador de CV</b><br>Necesitas:<br>• Nombre y contacto<br>• Experiencia laboral<br>• Estudios<br>• Habilidades<br><br>¿Te guío paso a paso?';
+  if(t.includes('emergencia')||t.includes('urgencia')) return '🚑 <b>EMERGENCIA</b><br><br>• <b>Policía:</b> 105<br>• <b>Bomberos:</b> 102<br>• <b>Ambulancia:</b> 106<br><br>¡Llama inmediatamente!';
+  if(t.includes('musica')||t.includes('canciones')) return '🎵 <b>Géneros populares:</b><br>• Cumbia y Chicha<br>• Reggaeton<br>• Salsa<br>• Electrocumbia<br><br>¿Recomendaciones de un género?';
+  if(t.includes('gracias')||t.includes('gracia')) return '😊 ¡De nada, '+nm+'! Estoy aquí siempre. ¿Algo más?';
+  if(t.includes('noticia')) return '📰 <b>Noticias Majes:</b><br>• Nueva plaza en el centro<br>• Feria de Majes próxima<br>• Nuevas rutas confirmadas<br><br>¿Más detalles?';
+  if(t.includes('evento')||t.includes('fiesta')) return '🎉 <b>Eventos próximos:</b><br>• 🎭 Feria Cultural — sábado<br>• 🏃 Caminata grupal — domingo 8am<br>• 🎵 Concierto local — viernes<br><br>¿Te interesa alguno?';
+  if(t.includes('horario')) return '⏰ <b>Horarios en Majes:</b><br>• Centros educativos: 8am–6pm<br>• Centros de salud: 7am–8pm<br>• Transporte: 5am–11pm<br><br>¿Horario específico?';
+  if(t.includes('precio')||t.includes('inventario')) return '📦 <b>Inventario</b><br>Registra tus productos:<br>• Nombre del producto<br>• Cantidad actual<br>• Precio venta<br><br>Te aviso cuando el stock esté bajo.';
+
+  return '🤖 No entendí del todo, <b>'+nm+'</b>. Estoy en modo <b>'+c.label+'</b>.<br>Puedo ayudarte con recursos, recordatorios e info local.<br><br>Prueba escribir: <i>Más info, Recordatorio, o un tema específico</i> 😊';
+}
+
+// ─── ARCHITECTURE ──────────────────────────────────────────
+function openArch(){ document.getElementById('archOv').classList.add('on'); }
+function closeArch(){ document.getElementById('archOv').classList.remove('on'); }
+</script>
+</body>
+</html>
